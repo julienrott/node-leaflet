@@ -3,6 +3,8 @@ html
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/leaflet.css')
+    //if lte IE 8
+        link(rel='stylesheet', href='/stylesheets/leaflet.ie.css')
     link(rel='stylesheet', href='/stylesheets/style.min.css')
   body
     block content
