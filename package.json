@@ -1,0 +1,19 @@
+{
+  "name": "application-name",
+  "version": "0.0.1",
+  "engines": {
+    "node": "0.8.8",
+    "npm":  "1.1.49"
+  },
+  "private": true,
+  "scripts": {
+    "start": "node app"
+  },
+  "author":"julienrott",
+  "dependencies": {
+    "express": "3.0.0rc4",
+    "jade": "*",
+    "connect-assetmanager":"0.0.28",
+    "connect-assetmanager-handlers":"0.0.18"
+  }
+}
