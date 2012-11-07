@@ -5,9 +5,16 @@ html
     link(rel='stylesheet', href='/stylesheets/leaflet.css')
     //if lte IE 8
         link(rel='stylesheet', href='/stylesheets/leaflet.ie.css')
+    link(rel='stylesheet', href='/stylesheets/MarkerCluster.css')
+    link(rel='stylesheet', href='/stylesheets/MarkerCluster.Default.css')
+    //if lte IE 8
+        link(rel='stylesheet', href='/stylesheets/MarkerCluster.Default.ie.css')
+    link(rel='stylesheet', href='/stylesheets/fileuploader.css')
     link(rel='stylesheet', href='/stylesheets/style.min.css')
   body
     block content
+    script(type='text/javascript', src='/socket.io/socket.io.js')
     script(type='text/javascript', src='/javascripts/leaflet.js')
     //script(type='text/javascript', src='/javascripts/leaflet-providers-0.0.1.js')
+    //script(type='text/javascript', src='/javascripts/fileuploader.min.js')
     script(type='text/javascript', src='/javascripts/app.min.js')

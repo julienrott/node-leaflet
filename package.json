@@ -13,7 +13,12 @@
   "dependencies": {
     "express": "3.0.0rc4",
     "jade": "*",
-    "connect-assetmanager":"0.0.28",
-    "connect-assetmanager-handlers":"0.0.18"
+    "connect-assetmanager": "0.0.28",
+    "connect-assetmanager-handlers": "0.0.18",
+    "node-uuid": "1.4.0",
+    "excel": "0.0.0",
+    "geocoder": "0.1.0",
+    "socket.io": "0.9.x",
+    "mongodb": "1.1.11"
   }
 }

@@ -1,10 +1,30 @@
 //var map = L.map('map').setView([51.505, -0.09], 13);
+//var markersLayer;
+
+var socket = io.connect();
+socket.on("receivemarkers", function(data) {
+    if (markersLayer) {
+        markersLayer.clearLayers();
+    }
+    var markers = data.markers;
+    //var markerstab = new Array();
+    for (idx in markers) {
+        var marker = markers[idx];
+        //markerstab.push(new L.Marker(new L.LatLng(marker.lat, marker.lng)));
+        var ml = new L.Marker(new L.LatLng(marker.lat, marker.lng)).bindPopup(marker.name + "<br/>" + marker.address);
+        markersLayer.addLayer(ml);
+    }
+    //map.addLayer(markersLayer);
+    //markersLayer.addLayer(markerstab);
+    //map.fitBounds(markersLayer.getBounds());
+});
 
 var map = new L.Map('map', {
     center: new L.LatLng(57.6, 8.4),
     zoom: 5,
     attributionControl: true
 });
+
 //var defaultLayer = new L.TileLayer.OpenStreetMap.Mapnik;
 var defaultLayer = new L.TileLayer.Stamen.Toner;
 map.addLayer(defaultLayer);
@@ -15,6 +35,25 @@ var baseLayers = {
     "OpenStreetMap Default": new L.TileLayer.OpenStreetMap.Mapnik,
 };
 map.addControl(new L.Control.Layers(baseLayers,'',{collapsed: false}));
+
+var markersLayer = new L.MarkerClusterGroup();
+map.addLayer(markersLayer);
+
+var uploader = new qq.FileUploader({
+    // pass the dom node (ex. $(selector)[0] for jQuery users)
+    element: document.getElementById('file-uploader'),
+    // path to server-side upload script
+    action: '/upload'
+});
+
+$(function() {
+    $("#btn").click(function() {
+        /*var markers = new L.MarkerClusterGroup();
+        markers.addLayer(new L.Marker(new L.LatLng(57.6, 8.4)));
+        map.addLayer(markers);*/
+        socket.emit('getmarkers', {from: "client"});
+    });
+});
 
 /*var baseLayers = {
     "OpenStreetMap Default": defaultLayer,
