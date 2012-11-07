@@ -17,7 +17,8 @@ var express = require('express')
     , io = require('socket.io')
     , mongo = require('mongodb')
     , Server = mongo.Server
-    , Db = mongo.Db;
+    , Db = mongo.Db
+    , url = require('url');
 
 eval(fs.readFileSync('jszip.js') + '');
 eval(fs.readFileSync('jszip-load.js') + '');
@@ -32,8 +33,7 @@ var app = express();
 var server = http.createServer(app);
 var sock;
 
-var dbstring = process.env.MONGOHQ_URL;
-console.log(dbstring);
+var dbstring = (process.env.NODE_ENV === 'production') ? url.parse(process.env.MONGOHQ_URL): "";
 var dbhost = (process.env.NODE_ENV === 'production') ? dbstring.hostname : 'localhost';
 var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
 
