@@ -68,6 +68,9 @@ io.set('log level', 2);
 
 io.sockets.on('connection', function(socket) {
     sock = socket;
+    
+    socket.emit('connection');
+    
     socket.on('getmarkers', function(data) {
         /*var collection = new mongo.Collection(db, 'addresses');
         collection.find({}, {}).toArray(function(err, markers) {

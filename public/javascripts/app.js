@@ -2,6 +2,11 @@
 //var markersLayer;
 
 var socket = io.connect();
+
+socket.on("connection", function(data) {
+    socket.emit('getmarkers');
+});
+
 socket.on("receivemarkers", function(data) {
     if (markersLayer) {
         markersLayer.clearLayers();
@@ -51,7 +56,7 @@ $(function() {
         /*var markers = new L.MarkerClusterGroup();
         markers.addLayer(new L.Marker(new L.LatLng(57.6, 8.4)));
         map.addLayer(markers);*/
-        socket.emit('getmarkers', {from: "client"});
+        socket.emit('getmarkers');
     });
 });
 
