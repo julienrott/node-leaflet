@@ -35,8 +35,8 @@ var sock;
 
 var dbstring = (process.env.NODE_ENV === 'production') ? url.parse(process.env.MONGOHQ_URL): "";
 console.log(dbstring);
-var dbhost = (process.env.NODE_ENV === 'production') ? dbstring.auth + '@' + dbstring.hostname : 'localhost';
-var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
+var dbhost = (process.env.NODE_ENV === 'production') ? process.env.MONGOHQ_URL : 'localhost';
+var dbport = (process.env.NODE_ENV === 'production') ? "" : 27017;
 
 var dbserver = new Server(dbhost, dbport, {auto_reconnect: true});
 var db = new Db('node-leaflet', dbserver, {safe: true});
