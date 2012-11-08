@@ -34,7 +34,7 @@ var app = express();
 var server = http.createServer(app);
 var sock;
 
-var dbstring = (process.env.NODE_ENV === 'production') ? url.parse(process.env.MONGOHQ_URL): "";
+var dbstring = (process.env.NODE_ENV === 'production') ? process.env.MONGOHQ_URL : "mongodb://localhost:27017/node-leaflet";
 console.log(dbstring);
 var dbhost = (process.env.NODE_ENV === 'production') ? dbstring.auth + '@' + dbstring.hostname : 'localhost';
 var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
@@ -52,7 +52,7 @@ var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
   }
 });*/
 
-var mongoosedb = mongoose.connect("mongodb://localhost:27017/node-leaflet");
+var mongoosedb = mongoose.connect(dbstring);
 var Schema = mongoose.Schema;
 var Addresses = new Schema({
     id: String,
