@@ -34,6 +34,7 @@ var server = http.createServer(app);
 var sock;
 
 var dbstring = (process.env.NODE_ENV === 'production') ? url.parse(process.env.MONGOHQ_URL): "";
+console.log(dbstring);
 var dbhost = (process.env.NODE_ENV === 'production') ? dbstring.hostname : 'localhost';
 var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
 
