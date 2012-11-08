@@ -69,14 +69,6 @@ io.set('log level', 2);
 io.sockets.on('connection', function(socket) {
     sock = socket;
     socket.on('getmarkers', function(data) {
-        //console.log(data);
-        /*var markers = new Array();
-        markers.push({"lat": "57.6", "lng": "8.4"});
-        markers.push({"lat": "57.4", "lng": "8.4"});
-        socket.emit('receivemarkers', {markers: markers});*/
-        /*var markers = db.addresses.find({});
-        socket.emit('receivemarkers', {markers: markers});*/
-        
         /*var collection = new mongo.Collection(db, 'addresses');
         collection.find({}, {}).toArray(function(err, markers) {
             //console.dir(markers);
@@ -261,55 +253,7 @@ function parseXLS(file) {
         for (idx in xlsdata) {
             var row = xlsdata[idx];
             rows.push(row);
-            /*geocoder.geocode(row[1], function(idx, row) {
-                return(function(err, data) {
-                    if (err) console.warn(err.message);
-                    if (!err && data.results.length > 0) {
-                        console.log(idx);
-                        var addr = {"lat": data.results[0].geometry.location.lat, 
-                                        "lng": data.results[0].geometry.location.lng,
-                                        "address": data.results[0].formatted_address,
-                                        "name": row[0],
-                                        "_id": row[3]};
-                        var collection = new mongo.Collection(db, 'addresses');
-                        collection.insert(addr, {safe:true},
-                            function(err, objects) {
-                                if (err) console.warn(err.message);
-                                if (err && err.message.indexOf('E11000 ') !== -1) {
-                                }
-                            }
-                        );
-                    }
-                });
-            }(idx, row));*/
         }
-        /*console.log("---------------------------------------------");
-        console.log(rows.length);
-        console.log("=============================================");
-        for (idx in rows) {
-            var row = rows[idx];
-            geocoder.geocode(row[1], function(idx, row) {
-                return (function(err, data){
-                    if (err) console.warn(err.message);
-                    if (!err && data.results.length > 0) {
-                        console.log(idx);
-                        var addr = {"lat": data.results[0].geometry.location.lat, 
-                                        "lng": data.results[0].geometry.location.lng,
-                                        "address": data.results[0].formatted_address,
-                                        "name": row[0],
-                                        "_id": row[3]};
-                        var collection = new mongo.Collection(db, 'addresses');
-                        collection.insert(addr, {safe:true},
-                            function(err, objects) {
-                                if (err) console.warn(err.message);
-                                if (err && err.message.indexOf('E11000 ') !== -1) {
-                                }
-                            }
-                        );
-                    }
-                });
-            }(idx, row));
-        }*/
         waitAndGeocode(0, rows);
     });
     //xlsx(file);
@@ -327,10 +271,11 @@ function waitAndGeocode(idx, rows) {
                                 "address": data.results[0].formatted_address,
                                 "name": row[0],
                                 "_id": row[3]};
-                var collection = new mongo.Collection(db, 'addresses');
-                collection.insert(addr, {safe:true},
+                //var collection = new mongo.Collection(db, 'addresses');
+                //collection.insert(addr, {safe:true},
+                Address.collection.insert(addr, {safe:true},
                     function(err, objects) {
-                        //if (err) console.warn(err.message);
+                        if (err) console.warn(err.message);
                         if (err && err.message.indexOf('E11000 ') !== -1) {
                         }
                     }
@@ -343,29 +288,7 @@ function waitAndGeocode(idx, rows) {
     }
 }
 
-function callSaveInDB(callback) {
-    callback.apply(arguments);
-}
-
-function saveInDB(err, data) {
-    console.log(err, data);
-    if (data.results.length > 0) {
-        var address = {"lat": data.results[0].geometry.location.lat, 
-                        "lng": data.results[0].geometry.location.lng,
-                        "address": data.results[0].formatted_address};
-        var collection = new mongo.Collection(db, 'addresses');
-        /*collection.insert(address, {safe:true},
-            function(err, objects) {
-                if (err) console.warn(err.message);
-                if (err && err.message.indexOf('E11000 ') !== -1) {
-                    console.log("already exists : " + objects);
-                }
-            }
-        );*/
-    }
-}
-
 server.listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));
-    console.log(process.env.NODE_ENV - process.env.NODE_ENV !== 'production');
+    console.log(process.env.NODE_ENV, process.env.NODE_ENV !== 'production');
 });
