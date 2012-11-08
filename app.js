@@ -18,6 +18,7 @@ var express = require('express')
     , mongo = require('mongodb')
     , Server = mongo.Server
     , Db = mongo.Db
+    , mongoose = require("mongoose")
     , url = require('url');
 
 eval(fs.readFileSync('jszip.js') + '');
@@ -35,17 +36,32 @@ var sock;
 
 var dbstring = (process.env.NODE_ENV === 'production') ? url.parse(process.env.MONGOHQ_URL): "";
 console.log(dbstring);
-var dbhost = (process.env.NODE_ENV === 'production') ? process.env.MONGOHQ_URL : 'localhost';
-var dbport = (process.env.NODE_ENV === 'production') ? "" : 27017;
+var dbhost = (process.env.NODE_ENV === 'production') ? dbstring.auth + '@' + dbstring.hostname : 'localhost';
+var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
 
-var dbserver = new Server(dbhost, dbport, {auto_reconnect: true});
-var db = new Db('node-leaflet', dbserver, {safe: true});
+//var dbserver = new Server(dbhost, dbport, {auto_reconnect: true});
+//var dbserver = new Server("mongodb://localhost:27017", 27017, {auto_reconnect: true});
+//var db = new Db('node-leaflet', dbserver, {safe: true});
 
-db.open(function(err, db) {
+/*db.open(function(err, db) {
   if(!err) {
     console.log("We are connected");
   }
+  else {
+    console.log(err);
+  }
+});*/
+
+var mongoosedb = mongoose.connect("mongodb://localhost:27017/node-leaflet");
+var Schema = mongoose.Schema;
+var Addresses = new Schema({
+    id: String,
+    name: String,
+    address: String,
+    lat: Number,
+    lng: Number
 });
+var Address = mongoose.model('Address', Addresses);
 
 io = io.listen(server);
 io.set('log level', 2);
@@ -60,9 +76,15 @@ io.sockets.on('connection', function(socket) {
         socket.emit('receivemarkers', {markers: markers});*/
         /*var markers = db.addresses.find({});
         socket.emit('receivemarkers', {markers: markers});*/
-        var collection = new mongo.Collection(db, 'addresses');
+        
+        /*var collection = new mongo.Collection(db, 'addresses');
         collection.find({}, {}).toArray(function(err, markers) {
             //console.dir(markers);
+            console.log(markers.length);
+            socket.emit('receivemarkers', {markers: markers});
+        });*/
+        
+        Address.find({}, function(err, markers) {
             console.log(markers.length);
             socket.emit('receivemarkers', {markers: markers});
         });
