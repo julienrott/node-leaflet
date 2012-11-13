@@ -81,7 +81,7 @@ io.sockets.on('connection', function(socket) {
         });*/
         
         Address.find({}, function(err, markers) {
-            console.log(markers.length);
+            //console.log(markers.length);
             socket.emit('receivemarkers', {markers: markers});
         });
     });
@@ -265,7 +265,7 @@ function parseXLS(file) {
 }
 
 function parseCSV(file) {
-    console.log("start parsing csv file : " + file);
+    //console.log("start parsing csv file : " + file);
     var rows = new Array();
     csv()
     .from.path(file, {delimiter: "\t"})
@@ -275,17 +275,19 @@ function parseCSV(file) {
     })*/
     .on('record', function(data,index){
         //console.log('#'+index+' '+ data);
-        rows.push(data);
-        if (index > 0 ) {
+        if (index > 0) {
+            rows.push(data);
             //mapQuestGeocode(data);
             //cloudmateGeocode(data);
         }
+        //console.log('rows', rows.length);
     })
     .on('end', function(count){
-        waitAndGeocode(1, rows);
+        //console.log("end parsing csv, nb rows to geocode : ", rows.length);
+        if (rows.length > 0) waitAndGeocode(0, rows);
     })
     .on('error', function(error){
-        console.log(error.message);
+        console.error(error.message);
     });
 }
 
@@ -313,7 +315,7 @@ function cloudmateGeocode(row) {
                 var result = JSON.parse(geocoderes);
                 var lat = result.features[0].centroid.coordinates[0];
                 var lng = result.features[0].centroid.coordinates[1];
-                console.log('data : ', lat, lng);
+                //console.log('data : ', lat, lng);
                 if (result.features.length > 0) {
                     var addr = {"lat": lat, 
                                     "lng": lng,
@@ -385,34 +387,38 @@ function mapQuestGeocode(row) {
 function waitAndGeocode(idx, rows) {
     //console.log(rows.length, idx);
     var row = rows[idx];
-    geocoder.geocode(row[1], function(idx, row) {
-        return (function(err, data){
-            console.log(err, data.status);
-            if (data.status === "OVER_QUERY_LIMIT") console.warn("OVER_QUERY_LIMIT");
-            if (err) console.warn(err.message);
-            if (!err && data.results.length > 0) {
-                var addr = {"lat": data.results[0].geometry.location.lat, 
-                                "lng": data.results[0].geometry.location.lng,
-                                "address": data.results[0].formatted_address,
-                                "name": row[0],
-                                "_id": row[3]};
-                //var collection = new mongo.Collection(db, 'addresses');
-                //collection.insert(addr, {safe:true},
-                Address.collection.insert(addr, {safe:true},
-                    function(err, objects) {
-                        if (err) console.warn(err.message);
-                        if (err && err.message.indexOf('E11000 ') !== -1) {
-                        }
+    Address.find({id: row[3]}, function(err, addresses) {
+        if (!err && addresses.length === 0) {
+            geocoder.geocode(row[1], function(idx, row) {
+                return (function(err, data){
+                    //console.log(err, data.status);
+                    if (data.status === "OVER_QUERY_LIMIT") console.warn("OVER_QUERY_LIMIT");
+                    if (err) console.warn(err.message);
+                    if (!err && data.results.length > 0) {
+                        var addr = {"lat": data.results[0].geometry.location.lat, 
+                                        "lng": data.results[0].geometry.location.lng,
+                                        "address": data.results[0].formatted_address,
+                                        "name": row[0],
+                                        "_id": row[3]};
+                        //var collection = new mongo.Collection(db, 'addresses');
+                        //collection.insert(addr, {safe:true},
+                        Address.collection.insert(addr, {safe:true},
+                            function(err, objects) {
+                                if (err) console.warn(err.message);
+                                if (err && err.message.indexOf('E11000 ') !== -1) {
+                                }
+                            }
+                        );
                     }
-                );
-            }
-        });
-    }(idx, row));
+                });
+            }(idx, row));
+        }
+    });
     if (idx < rows.length - 1) {
         setTimeout(function(){waitAndGeocode(idx + 1, rows);}, 250);
     }
     else {
-        console.log("end geocoding");
+        //console.log("end geocoding");
     }
 }
 
