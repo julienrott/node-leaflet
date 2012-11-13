@@ -19,7 +19,8 @@ var express = require('express')
     , Server = mongo.Server
     , Db = mongo.Db
     , mongoose = require("mongoose")
-    , url = require('url');
+    , url = require('url')
+    , csv = require('csv');
 
 eval(fs.readFileSync('jszip.js') + '');
 eval(fs.readFileSync('jszip-load.js') + '');
@@ -176,7 +177,8 @@ var uploadFile = function(req, targetdir, callback) {
         moveFile(sourcefile, targetfile, function(err) {
             if(!err) {
                 callback({success: true});
-                parseXLS(targetfile);
+                //parseXLS(targetfile);
+                parseCSV(targetfile);
             }
             else {
                 callback({success: false, error: err});
@@ -262,11 +264,131 @@ function parseXLS(file) {
     //xlsx(file);
 }
 
+function parseCSV(file) {
+    console.log("start parsing csv file : " + file);
+    var rows = new Array();
+    csv()
+    .from.path(file, {delimiter: "\t"})
+    /*.transform(function(data){
+        data.unshift(data.pop());
+        return data;
+    })*/
+    .on('record', function(data,index){
+        //console.log('#'+index+' '+ data);
+        rows.push(data);
+        if (index > 0 ) {
+            //mapQuestGeocode(data);
+            //cloudmateGeocode(data);
+        }
+    })
+    .on('end', function(count){
+        waitAndGeocode(1, rows);
+    })
+    .on('error', function(error){
+        console.log(error.message);
+    });
+}
+
+function cloudmateGeocode(row) {
+    var cloudmateapikey = "ec1cb2ec4f494d99a78fca87f80d1935";
+    var host = "geocoding.cloudmade.com";
+    var path = "/" + cloudmateapikey + "/geocoding/v2/find.js?results=1&query=" + encodeURIComponent(row[1]);
+    
+    var options = {
+        host: host,
+        path: path
+    }
+
+    var request = 'http://' + host + path;
+    //console.log('request : ', request);
+
+    http.get(options, function(res) {
+        //res.setEncoding('utf8');
+        var geocoderes = '';
+        res.on('data', function (data) {
+            geocoderes += data;
+        });
+        res.on('end', function() {
+            try {
+                var result = JSON.parse(geocoderes);
+                var lat = result.features[0].centroid.coordinates[0];
+                var lng = result.features[0].centroid.coordinates[1];
+                console.log('data : ', lat, lng);
+                if (result.features.length > 0) {
+                    var addr = {"lat": lat, 
+                                    "lng": lng,
+                                    "address": row[1],
+                                    "name": row[0],
+                                    "_id": row[3]};
+                    Address.collection.insert(addr, {safe:true},
+                        function(err, objects) {
+                            //if (err) console.warn(err.message);
+                            if (err && err.message.indexOf('E11000 ') !== -1) {
+                            }
+                        }
+                    );
+                }
+            }
+            catch (ex) {
+                console.error(ex);
+            }
+        });
+        res.on('error', function(err) {
+            console.error(err);
+        });
+        res.on(500, function(err) {
+            console.error(err);
+        });
+    });
+}
+
+function mapQuestGeocode(row) {
+    var mapquestapikey = "Fmjtd%7Cluuan9uan5%2Caw%3Do5-96r256";
+    var host = "www.mapquestapi.com";
+    var path = "/geocoding/v1/address?key=" + mapquestapikey + "&location=" + encodeURIComponent(row[1]);
+    
+    var options = {
+        host: host,
+        path: path
+    }
+
+    var request = 'http://' + host + path;
+    //console.log('request : ' + request);
+
+    http.get(options, function(res) {
+        //res.setEncoding('utf8');
+        var geocoderes = '';
+        res.on('data', function (data) {
+            geocoderes += data;
+        });
+        res.on('end', function() {
+            var res = JSON.parse(geocoderes);
+            //console.log('data : ' + JSON.stringify(res.results[0].locations[0].latLng));
+            if (res.results.length > 0 && res.results[0].locations.length > 0) {
+                var addr = {"lat": res.results[0].locations[0].latLng.lat, 
+                                "lng": res.results[0].locations[0].latLng.lng,
+                                "address": row[1],
+                                "name": row[0],
+                                "_id": row[3]};
+                Address.collection.insert(addr, {safe:true},
+                    function(err, objects) {
+                        //if (err) console.warn(err.message);
+                        if (err && err.message.indexOf('E11000 ') !== -1) {
+                        }
+                    }
+                );
+            }
+        });
+    });
+}
+
 function waitAndGeocode(idx, rows) {
     //console.log(rows.length, idx);
     var row = rows[idx];
     geocoder.geocode(row[1], function(idx, row) {
         return (function(err, data){
+            console.log(err, data.status);
+            if (data.status === "OVER_QUERY_LIMIT") console.warn("OVER_QUERY_LIMIT");
             if (err) console.warn(err.message);
             if (!err && data.results.length > 0) {
                 var addr = {"lat": data.results[0].geometry.location.lat, 
@@ -288,6 +410,9 @@ function waitAndGeocode(idx, rows) {
     }(idx, row));
     if (idx < rows.length - 1) {
         setTimeout(function(){waitAndGeocode(idx + 1, rows);}, 250);
+    }
+    else {
+        console.log("end geocoding");
     }
 }
 
