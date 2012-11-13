@@ -54,6 +54,7 @@ var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
 });*/
 
 var mongoosedb = mongoose.connect(dbstring);
+var ObjectId = mongoose.Types.ObjectId;
 var Schema = mongoose.Schema;
 var Addresses = new Schema({
     id: String,
@@ -385,9 +386,8 @@ function mapQuestGeocode(row) {
 }
 
 function waitAndGeocode(idx, rows) {
-    //console.log(rows.length, idx);
     var row = rows[idx];
-    Address.find({id: row[3]}, function(err, addresses) {
+    Address.find({"id": row[3]}, function(err, addresses) {
         if (!err && addresses.length === 0) {
             geocoder.geocode(row[1], function(idx, row) {
                 return (function(err, data){
@@ -399,6 +399,7 @@ function waitAndGeocode(idx, rows) {
                                         "lng": data.results[0].geometry.location.lng,
                                         "address": data.results[0].formatted_address,
                                         "name": row[0],
+                                        "id": row[3],
                                         "_id": row[3]};
                         //var collection = new mongo.Collection(db, 'addresses');
                         //collection.insert(addr, {safe:true},
