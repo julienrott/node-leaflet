@@ -1,5 +1,5 @@
 //var map = L.map('map').setView([51.505, -0.09], 13);
-//var markersLayer;
+var markersLayer;
 
 var socket = io.connect();
 
@@ -10,16 +10,20 @@ socket.on("connection", function(data) {
 socket.on("receivemarkers", function(data) {
     if (markersLayer) {
         markersLayer.clearLayers();
+        map.removeLayer(markersLayer);
     }
+    markersLayer = new L.MarkerClusterGroup();
+
     var markers = data.markers;
     //var markerstab = new Array();
     for (idx in markers) {
         var marker = markers[idx];
         //markerstab.push(new L.Marker(new L.LatLng(marker.lat, marker.lng)));
-        var ml = new L.Marker(new L.LatLng(marker.lat, marker.lng)).bindPopup(marker.name + "<br/>" + marker.address);
+        var ml = new L.Marker(new L.LatLng(marker.lat, marker.lng));
+        ml.bindPopup(marker.name + "<br/>" + marker.address);
         markersLayer.addLayer(ml);
     }
-    //map.addLayer(markersLayer);
+    map.addLayer(markersLayer);
     //markersLayer.addLayer(markerstab);
     //map.fitBounds(markersLayer.getBounds());
 });
@@ -41,8 +45,8 @@ var baseLayers = {
 };
 map.addControl(new L.Control.Layers(baseLayers,'',{collapsed: false}));
 
-var markersLayer = new L.MarkerClusterGroup();
-map.addLayer(markersLayer);
+//var markersLayer = new L.MarkerClusterGroup();
+//map.addLayer(markersLayer);
 
 var uploader = new qq.FileUploader({
     // pass the dom node (ex. $(selector)[0] for jQuery users)
