@@ -1,10 +1,11 @@
-//var map = L.map('map').setView([51.505, -0.09], 13);
 var markersLayer;
 
 var socket = io.connect();
 
 socket.on("connection", function(data) {
     socket.emit('getmarkers');
+    socket.emit('getCompanyTypes');
+        socket.emit('getSNICodes');
 });
 
 socket.on("receivemarkers", function(data) {
@@ -15,17 +16,33 @@ socket.on("receivemarkers", function(data) {
     markersLayer = new L.MarkerClusterGroup();
 
     var markers = data.markers;
-    //var markerstab = new Array();
     for (idx in markers) {
         var marker = markers[idx];
-        //markerstab.push(new L.Marker(new L.LatLng(marker.lat, marker.lng)));
         var ml = new L.Marker(new L.LatLng(marker.lat, marker.lng));
         ml.bindPopup(marker.name + "<br/>" + marker.address);
         markersLayer.addLayer(ml);
     }
     map.addLayer(markersLayer);
-    //markersLayer.addLayer(markerstab);
-    //map.fitBounds(markersLayer.getBounds());
+});
+
+socket.on("receiveCompanyTypes", function(data) {
+    $('#companyTypesSelect').find('option').remove().end();
+    var companyTypesSelect = $('#companyTypesSelect')[0];
+    companyTypesSelect.add(new Option('No company type selected', 0));
+    for (idx in data.companyTypes) {
+        var companyType = data.companyTypes[idx];
+        companyTypesSelect.add(new Option(companyType, companyType));
+    }
+});
+
+socket.on("receiveSNICodes", function(data) {
+    $('#SNICodesSelect').find('option').remove().end();
+    var SNICodesSelect = $('#SNICodesSelect')[0];
+    SNICodesSelect.add(new Option('No SNI Code selected', 0));
+    for (idx in data.SNICodes) {
+        var SNICode = data.SNICodes[idx];
+        SNICodesSelect.add(new Option(SNICode, SNICode));
+    }
 });
 
 var map = new L.Map('map', {
@@ -34,7 +51,6 @@ var map = new L.Map('map', {
     attributionControl: true
 });
 
-//var defaultLayer = new L.TileLayer.OpenStreetMap.Mapnik;
 var defaultLayer = new L.TileLayer.Stamen.Toner;
 map.addLayer(defaultLayer);
 
@@ -45,9 +61,6 @@ var baseLayers = {
 };
 map.addControl(new L.Control.Layers(baseLayers,'',{collapsed: false}));
 
-//var markersLayer = new L.MarkerClusterGroup();
-//map.addLayer(markersLayer);
-
 var uploader = new qq.FileUploader({
     // pass the dom node (ex. $(selector)[0] for jQuery users)
     element: document.getElementById('file-uploader'),
@@ -57,35 +70,29 @@ var uploader = new qq.FileUploader({
 
 $(function() {
     $("#btn").click(function() {
-        /*var markers = new L.MarkerClusterGroup();
-        markers.addLayer(new L.Marker(new L.LatLng(57.6, 8.4)));
-        map.addLayer(markers);*/
         socket.emit('getmarkers');
+        socket.emit('getCompanyTypes');
+        socket.emit('getSNICodes');
+    });
+    
+    $("#companyTypesSelect").change(function() {
+        $("#SNICodesSelect")[0].selectedIndex = 0;
+        if ($(this)[0].selectedIndex === 0) {
+            socket.emit('getmarkers');
+        }
+        else {
+            socket.emit('getmarkers', {companyType: $("#companyTypesSelect option:selected")[0].value});
+        }
+    });
+    
+    $("#SNICodesSelect").change(function() {
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        if ($(this)[0].selectedIndex === 0) {
+            socket.emit('getmarkers');
+        }
+        else {
+            socket.emit('getmarkers', {SNICode: $("#SNICodesSelect option:selected")[0].value});
+        }
     });
 });
 
-/*var baseLayers = {
-    "OpenStreetMap Default": defaultLayer,
-    "OpenStreetMap German Style": new L.TileLayer.OpenStreetMap.DE,
-    "OpenStreetMap Black and White": new L.TileLayer.OpenStreetMap.BlackAndWhite,
-    "Thunderforest OpenCycleMap": new L.TileLayer.Thunderforest.OpenCycleMap,
-    "Thunderforest Transport": new L.TileLayer.Thunderforest.Transport,
-    "Thunderforest Landscape": new L.TileLayer.Thunderforest.Landscape,
-    "MapQuest OSM": new L.TileLayer.MapQuestOpen.OSM,
-    "MapQuest Aerial": new L.TileLayer.MapQuestOpen.Aerial,
-    "MapBox Simple": new L.TileLayer.MapBox.Simple,
-    "MapBox Streets": new L.TileLayer.MapBox.Streets,
-    "MapBox Light": new L.TileLayer.MapBox.Light,
-    "MapBox Lacquer": new L.TileLayer.MapBox.Lacquer,
-    "MapBox Warden": new L.TileLayer.MapBox.Warden,
-    "Stamen Toner": new L.TileLayer.Stamen.Toner,
-    "Stamen Terrain": new L.TileLayer.Stamen.Terrain,
-    "Stamen Watercolor": new L.TileLayer.Stamen.Watercolor,
-    "Esri WorldStreetMap": new L.TileLayer.Esri.WorldStreetMap,
-    "Esri DeLorme": new L.TileLayer.Esri.DeLorme,
-    "Esri WorldTopoMap": new L.TileLayer.Esri.WorldTopoMap,
-    "Esri WorldImagery": new L.TileLayer.Esri.WorldImagery,
-    "Esri OceanBasemap": new L.TileLayer.Esri.OceanBasemap,
-    "Esri NatGeoWorldMap": new L.TileLayer.Esri.NatGeoWorldMap
-};
-map.addControl(new L.Control.Layers(baseLayers,'',{collapsed: false}));*/

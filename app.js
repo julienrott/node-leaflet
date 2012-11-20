@@ -11,7 +11,6 @@ var express = require('express')
     , fs = require('fs')
     , util = require('util')
     , uuid = require('node-uuid')
-    //, xlsx = require('xlsx-2.0.0');
     , excel = require("excel")
     , geocoder = require('geocoder')
     , io = require('socket.io')
@@ -22,36 +21,13 @@ var express = require('express')
     , url = require('url')
     , csv = require('csv');
 
-eval(fs.readFileSync('jszip.js') + '');
-eval(fs.readFileSync('jszip-load.js') + '');
-eval(fs.readFileSync('jszip-deflate.js') + '');
-eval(fs.readFileSync('jszip-inflate.js') + '');
-eval(fs.readFileSync('xlsx-2.0.0.js') + '');
-
 var assetManager = require('connect-assetmanager');
 var assetHandler = require('connect-assetmanager-handlers');
 
 var app = express();
 var server = http.createServer(app);
-var sock;
 
 var dbstring = (process.env.NODE_ENV === 'production') ? process.env.MONGOHQ_URL : "mongodb://localhost:27017/node-leaflet";
-console.log(dbstring);
-var dbhost = (process.env.NODE_ENV === 'production') ? dbstring.auth + '@' + dbstring.hostname : 'localhost';
-var dbport = (process.env.NODE_ENV === 'production') ? dbstring.port : 27017;
-
-//var dbserver = new Server(dbhost, dbport, {auto_reconnect: true});
-//var dbserver = new Server("mongodb://localhost:27017", 27017, {auto_reconnect: true});
-//var db = new Db('node-leaflet', dbserver, {safe: true});
-
-/*db.open(function(err, db) {
-  if(!err) {
-    console.log("We are connected");
-  }
-  else {
-    console.log(err);
-  }
-});*/
 
 var mongoosedb = mongoose.connect(dbstring);
 var ObjectId = mongoose.Types.ObjectId;
@@ -61,7 +37,9 @@ var Addresses = new Schema({
     name: String,
     address: String,
     lat: Number,
-    lng: Number
+    lng: Number,
+    companyType: String,
+    SNICode: String
 });
 var Address = mongoose.model('Address', Addresses);
 
@@ -69,27 +47,44 @@ io = io.listen(server);
 io.set('log level', 2);
 
 io.sockets.on('connection', function(socket) {
-    sock = socket;
-    
     socket.emit('connection');
     
-    socket.on('getmarkers', function(data) {
-        /*var collection = new mongo.Collection(db, 'addresses');
-        collection.find({}, {}).toArray(function(err, markers) {
-            //console.dir(markers);
-            console.log(markers.length);
-            socket.emit('receivemarkers', {markers: markers});
-        });*/
-        
-        Address.find({}, function(err, markers) {
-            //console.log(markers.length);
-            socket.emit('receivemarkers', {markers: markers});
+    socket.on('getmarkers', function(options) {
+        if (options) {
+            if (options.companyType) {
+                Address.find({companyType: options.companyType}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                });
+            }
+            if (options.SNICode) {
+                Address.find({SNICode: options.SNICode}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                });
+            }
+        }
+        else {
+            Address.find({}, function(err, markers) {
+                socket.emit('receivemarkers', {markers: markers});
+            });
+        }
+    });
+    
+    socket.on('getCompanyTypes', function(data) {
+        Address.distinct('companyType', {}, function(err, companyTypes) {
+            companyTypes.sort();
+            socket.emit('receiveCompanyTypes', {companyTypes: companyTypes});
+        });
+    });
+    
+    socket.on('getSNICodes', function(data) {
+        Address.distinct('SNICode', {}, function(err, SNICodes) {
+            SNICodes.sort();
+            socket.emit('receiveSNICodes', {SNICodes: SNICodes});
         });
     });
 });
 
 var settings = {
-    //uploadpath: __dirname + '/uploads/',
     uploadpath: '/tmp/',
     tmpuploadpath: '/tmp/'
 };
@@ -178,7 +173,6 @@ var uploadFile = function(req, targetdir, callback) {
         moveFile(sourcefile, targetfile, function(err) {
             if(!err) {
                 callback({success: true});
-                //parseXLS(targetfile);
                 parseCSV(targetfile);
             }
             else {
@@ -241,157 +235,45 @@ var moveFile = function(source, dest, callback) {
     is.pipe(os);
 };
 
-var markers;
-
-function addToArray(address, sendToClient) {
-    markers.push({"lat": address.geometry.location.lat, 
-                "lng": address.geometry.location.lng,
-                "address": address.formatted_address});
-    if (sendToClient) {
-        sock.emit('receivemarkers', {markers: markers});
-    }
-}
-
-function parseXLS(file) {
-    excel(file, function(xlsdata) {
-        console.log(xlsdata.length);
-        var rows = new Array();
-        for (idx in xlsdata) {
-            var row = xlsdata[idx];
-            rows.push(row);
-        }
-        waitAndGeocode(0, rows);
-    });
-    //xlsx(file);
-}
-
 function parseCSV(file) {
-    //console.log("start parsing csv file : " + file);
     var rows = new Array();
+    var SNICodeIdx = 0;
     csv()
     .from.path(file, {delimiter: "\t"})
     /*.transform(function(data){
         data.unshift(data.pop());
         return data;
     })*/
-    .on('record', function(data,index){
-        //console.log('#'+index+' '+ data);
+    .on('record', function(data, index){
+        if (index === 0) {
+            for (idx in data) {
+                var columnName = data[idx];
+                if (columnName.indexOf('SNI') > -1) {
+                    SNICodeIdx = idx;
+                    break;
+                }
+            }
+        }
         if (index > 0) {
             rows.push(data);
-            //mapQuestGeocode(data);
-            //cloudmateGeocode(data);
         }
-        //console.log('rows', rows.length);
     })
     .on('end', function(count){
-        //console.log("end parsing csv, nb rows to geocode : ", rows.length);
-        if (rows.length > 0) waitAndGeocode(0, rows);
+        if (rows.length > 0) {
+            waitAndGeocode(0, rows, SNICodeIdx);
+        }
     })
     .on('error', function(error){
         console.error(error.message);
     });
 }
 
-function cloudmateGeocode(row) {
-    var cloudmateapikey = "ec1cb2ec4f494d99a78fca87f80d1935";
-    var host = "geocoding.cloudmade.com";
-    var path = "/" + cloudmateapikey + "/geocoding/v2/find.js?results=1&query=" + encodeURIComponent(row[1]);
-    
-    var options = {
-        host: host,
-        path: path
-    }
-
-    var request = 'http://' + host + path;
-    //console.log('request : ', request);
-
-    http.get(options, function(res) {
-        //res.setEncoding('utf8');
-        var geocoderes = '';
-        res.on('data', function (data) {
-            geocoderes += data;
-        });
-        res.on('end', function() {
-            try {
-                var result = JSON.parse(geocoderes);
-                var lat = result.features[0].centroid.coordinates[0];
-                var lng = result.features[0].centroid.coordinates[1];
-                //console.log('data : ', lat, lng);
-                if (result.features.length > 0) {
-                    var addr = {"lat": lat, 
-                                    "lng": lng,
-                                    "address": row[1],
-                                    "name": row[0],
-                                    "_id": row[3]};
-                    Address.collection.insert(addr, {safe:true},
-                        function(err, objects) {
-                            //if (err) console.warn(err.message);
-                            if (err && err.message.indexOf('E11000 ') !== -1) {
-                            }
-                        }
-                    );
-                }
-            }
-            catch (ex) {
-                console.error(ex);
-            }
-        });
-        res.on('error', function(err) {
-            console.error(err);
-        });
-        res.on(500, function(err) {
-            console.error(err);
-        });
-    });
-}
-
-function mapQuestGeocode(row) {
-    var mapquestapikey = "Fmjtd%7Cluuan9uan5%2Caw%3Do5-96r256";
-    var host = "www.mapquestapi.com";
-    var path = "/geocoding/v1/address?key=" + mapquestapikey + "&location=" + encodeURIComponent(row[1]);
-    
-    var options = {
-        host: host,
-        path: path
-    }
-
-    var request = 'http://' + host + path;
-    //console.log('request : ' + request);
-
-    http.get(options, function(res) {
-        //res.setEncoding('utf8');
-        var geocoderes = '';
-        res.on('data', function (data) {
-            geocoderes += data;
-        });
-        res.on('end', function() {
-            var res = JSON.parse(geocoderes);
-            //console.log('data : ' + JSON.stringify(res.results[0].locations[0].latLng));
-            if (res.results.length > 0 && res.results[0].locations.length > 0) {
-                var addr = {"lat": res.results[0].locations[0].latLng.lat, 
-                                "lng": res.results[0].locations[0].latLng.lng,
-                                "address": row[1],
-                                "name": row[0],
-                                "_id": row[3]};
-                Address.collection.insert(addr, {safe:true},
-                    function(err, objects) {
-                        //if (err) console.warn(err.message);
-                        if (err && err.message.indexOf('E11000 ') !== -1) {
-                        }
-                    }
-                );
-            }
-        });
-    });
-}
-
-function waitAndGeocode(idx, rows) {
+function waitAndGeocode(idx, rows, SNICodeIdx) {
     var row = rows[idx];
     Address.find({"id": row[3]}, function(err, addresses) {
         if (!err && addresses.length === 0) {
-            geocoder.geocode(row[1], function(idx, row) {
+            geocoder.geocode(row[1] + " Sweden", function(idx, row, SNICodeIdx) {
                 return (function(err, data){
-                    //console.log(err, data.status);
                     if (data.status === "OVER_QUERY_LIMIT") console.warn("OVER_QUERY_LIMIT");
                     if (err) console.warn(err.message);
                     if (!err && data.results.length > 0) {
@@ -399,10 +281,10 @@ function waitAndGeocode(idx, rows) {
                                         "lng": data.results[0].geometry.location.lng,
                                         "address": data.results[0].formatted_address,
                                         "name": row[0],
+                                        "companyType": row[5],
+                                        "SNICode": row[SNICodeIdx].substr(0, 5),
                                         "id": row[3],
                                         "_id": row[3]};
-                        //var collection = new mongo.Collection(db, 'addresses');
-                        //collection.insert(addr, {safe:true},
                         Address.collection.insert(addr, {safe:true},
                             function(err, objects) {
                                 if (err) console.warn(err.message);
@@ -412,14 +294,12 @@ function waitAndGeocode(idx, rows) {
                         );
                     }
                 });
-            }(idx, row));
+            }(idx, row, SNICodeIdx));
         }
     });
     if (idx < rows.length - 1) {
-        setTimeout(function(){waitAndGeocode(idx + 1, rows);}, 250);
-    }
-    else {
-        //console.log("end geocoding");
+        //wait beetween google geocoding API requests...
+        setTimeout(function(){waitAndGeocode(idx + 1, rows, SNICodeIdx);}, 250);
     }
 }
 
