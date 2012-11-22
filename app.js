@@ -39,7 +39,15 @@ var Addresses = new Schema({
     lat: Number,
     lng: Number,
     companyType: String,
-    SNICode: String
+    description: String,
+    branchMain: String,
+    branchSub1: String,
+    branchSub2: String,
+    SNICode1: String,
+    SNICode2: String,
+    SNICode3: String,
+    SNICode4: String,
+    SNICode5: String
 });
 var Address = mongoose.model('Address', Addresses);
 
@@ -55,17 +63,72 @@ io.sockets.on('connection', function(socket) {
                 Address.find({companyType: options.companyType}, function(err, markers) {
                     socket.emit('receivemarkers', {markers: markers});
                 });
+                return;
             }
-            if (options.SNICode) {
-                Address.find({SNICode: options.SNICode}, function(err, markers) {
+            if (options.SNICode5) {
+                Address.find({SNICode1: options.SNICode1, 
+                              SNICode2: options.SNICode2, 
+                              SNICode3: options.SNICode3, 
+                              SNICode4: options.SNICode4, 
+                              SNICode5: options.SNICode5}, function(err, markers) {
                     socket.emit('receivemarkers', {markers: markers});
                 });
+                return;
+            }
+            if (options.SNICode4) {
+                Address.find({SNICode1: options.SNICode1, 
+                              SNICode2: options.SNICode2, 
+                              SNICode3: options.SNICode3, 
+                              SNICode4: options.SNICode4}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                    Address.distinct('SNICode5', {SNICode1: options.SNICode1,
+                                                  SNICode2: options.SNICode2,
+                                                  SNICode3: options.SNICode3,
+                                                  SNICode4: options.SNICode4}, function(err, SNICodes5) {
+                        socket.emit('receiveSNICodes5', {SNICodes5: SNICodes5});
+                    });
+                });
+                return;
+            }
+            if (options.SNICode3) {
+                Address.find({SNICode1: options.SNICode1, 
+                              SNICode2: options.SNICode2, 
+                              SNICode3: options.SNICode3}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                    Address.distinct('SNICode4', {SNICode1: options.SNICode1,
+                                                  SNICode2: options.SNICode2,
+                                                  SNICode3: options.SNICode3}, function(err, SNICodes4) {
+                        socket.emit('receiveSNICodes4', {SNICodes4: SNICodes4});
+                    });
+                });
+                return;
+            }
+            if (options.SNICode2) {
+                Address.find({SNICode1: options.SNICode1, 
+                              SNICode2: options.SNICode2}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                    Address.distinct('SNICode3', {SNICode1: options.SNICode1,
+                                                  SNICode2: options.SNICode2}, function(err, SNICodes3) {
+                        socket.emit('receiveSNICodes3', {SNICodes3: SNICodes3});
+                    });
+                });
+                return;
+            }
+            if (options.SNICode1) {
+                Address.find({SNICode1: options.SNICode1}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                    Address.distinct('SNICode2', {SNICode1: options.SNICode1}, function(err, SNICodes2) {
+                        socket.emit('receiveSNICodes2', {SNICodes2: SNICodes2});
+                    });
+                });
+                return;
             }
         }
         else {
             Address.find({}, function(err, markers) {
                 socket.emit('receivemarkers', {markers: markers});
             });
+            return;
         }
     });
     
@@ -76,13 +139,72 @@ io.sockets.on('connection', function(socket) {
         });
     });
     
-    socket.on('getSNICodes', function(data) {
-        Address.distinct('SNICode', {}, function(err, SNICodes) {
-            SNICodes.sort();
-            socket.emit('receiveSNICodes', {SNICodes: SNICodes});
+    socket.on('getSNICodes1', function(data) {
+        Address.distinct('SNICode1', {}, function(err, SNICodes1) {
+            SNICodes1.sort();
+            socket.emit('receiveSNICodes1', {SNICodes1: SNICodes1});
+        });
+    });
+    
+    socket.on('getPostcodes', function(data) {
+        Address.distinct('postcode', {}, function(err, postcodes) {
+            var postcode = postcodes[0];
+            console.log(postcode);
+            /*geocoder.geocode(postcode + " Sweden", function() {
+                return (function(err, data) {
+                    if (data.status === "OVER_QUERY_LIMIT") console.warn("OVER_QUERY_LIMIT");
+                    if (err) console.warn(err.message);
+                    if (!err && data.results.length > 0) {
+                        console.log(JSON.stringify(data));
+                    }
+                });
+            }());*/
+            cloudmateGeocode(socket);
         });
     });
 });
+
+function cloudmateGeocode(socket) {
+    //http://geocoding.cloudmade.com/ec1cb2ec4f494d99a78fca87f80d1935/geocoding/v2/find.geojs?query=postcode:417%2058;country:sweden&return_geometry=true
+    var cloudmateapikey = "ec1cb2ec4f494d99a78fca87f80d1935";
+    var host = "geocoding.cloudmade.com";
+    //var path = "/" + cloudmateapikey + "/geocoding/v2/find.geojs?results=1&return_geometry=true&query=" + encodeURIComponent("postcode:417 58;country:sweden");
+    var path = "/" + cloudmateapikey + "/geocoding/v2/find.geojs?results=1&return_geometry=true&query=" + encodeURIComponent("411 20 Gothenburg, Västra Götaland County, Sweden");
+    var options = {
+        host: host,
+        path: path
+    }
+
+    http.get(options, function(res) {
+        //res.setEncoding('utf8');
+        var geocoderes = '';
+        res.on('data', function (data) {
+            geocoderes += data;
+        });
+        res.on('end', function() {
+            try {
+                var result = JSON.parse(geocoderes);
+                //var lat = result.features[0].centroid.coordinates[0];
+                //var lng = result.features[0].centroid.coordinates[1];
+                console.log('geocoderes : ', geocoderes);
+                if (result.features.length > 0) {
+                    var feature = result.features[0];
+                    feature.type = "Feature";
+                    socket.emit('receivePostcodes', feature);
+                }
+            }
+            catch (ex) {
+                console.error(ex);
+            }
+        });
+        res.on('error', function(err) {
+            console.error(err);
+        });
+        res.on(500, function(err) {
+            console.error(err);
+        });
+    });
+}
 
 var settings = {
     uploadpath: '/tmp/',
@@ -237,7 +359,7 @@ var moveFile = function(source, dest, callback) {
 
 function parseCSV(file) {
     var rows = new Array();
-    var SNICodeIdx = 0;
+    var columns = {};
     csv()
     .from.path(file, {delimiter: "\t"})
     /*.transform(function(data){
@@ -248,9 +370,44 @@ function parseCSV(file) {
         if (index === 0) {
             for (idx in data) {
                 var columnName = data[idx];
-                if (columnName.indexOf('SNI') > -1) {
-                    SNICodeIdx = idx;
-                    break;
+                if (/description/i.test(columnName)) {
+                    columns.description = idx;
+                    continue;
+                }
+                if (/branch\s+\(main\)/i.test(columnName)
+                        || /branch\s+\(master\)/i.test(columnName)) {
+                    columns.branchMain = idx;
+                    continue;
+                }
+                if (/branch\s+\(sub\)/i.test(columnName)) {
+                    if (!columns.branchSub1) {
+                        columns.branchSub1 = idx;
+                        continue;
+                    }
+                    if (!columns.branchSub2) {
+                        columns.branchSub2 = idx;
+                        continue;
+                    }
+                }
+                if (/sni\s+[A-z]+\s+\#*1/i.test(columnName)) {
+                    columns.SNICode1 = idx;
+                    continue;
+                }
+                if (/sni\s+[A-z]+\s+\#*2/i.test(columnName)) {
+                    columns.SNICode2 = idx;
+                    continue;
+                }
+                if (/sni\s+[A-z]+\s+\#*3/i.test(columnName)) {
+                    columns.SNICode3 = idx;
+                    continue;
+                }
+                if (/sni\s+[A-z]+\s+\#*4/i.test(columnName)) {
+                    columns.SNICode4 = idx;
+                    continue;
+                }
+                if (/sni\s+[A-z]+\s+\#*5/i.test(columnName)) {
+                    columns.SNICode5 = idx;
+                    continue;
                 }
             }
         }
@@ -260,7 +417,7 @@ function parseCSV(file) {
     })
     .on('end', function(count){
         if (rows.length > 0) {
-            waitAndGeocode(0, rows, SNICodeIdx);
+            waitAndGeocode(0, rows, columns);
         }
     })
     .on('error', function(error){
@@ -268,23 +425,32 @@ function parseCSV(file) {
     });
 }
 
-function waitAndGeocode(idx, rows, SNICodeIdx) {
+function waitAndGeocode(idx, rows, columns) {
     var row = rows[idx];
     Address.find({"id": row[3]}, function(err, addresses) {
         if (!err && addresses.length === 0) {
-            geocoder.geocode(row[1] + " Sweden", function(idx, row, SNICodeIdx) {
-                return (function(err, data){
+            geocoder.geocode(row[1] + " Sweden", function(idx, row, columns) {
+                return (function(err, data) {
                     if (data.status === "OVER_QUERY_LIMIT") console.warn("OVER_QUERY_LIMIT");
                     if (err) console.warn(err.message);
                     if (!err && data.results.length > 0) {
                         var addr = {"lat": data.results[0].geometry.location.lat, 
-                                        "lng": data.results[0].geometry.location.lng,
-                                        "address": data.results[0].formatted_address,
-                                        "name": row[0],
-                                        "companyType": row[5],
-                                        "SNICode": row[SNICodeIdx].substr(0, 5),
-                                        "id": row[3],
-                                        "_id": row[3]};
+                                    "lng": data.results[0].geometry.location.lng,
+                                    "address": data.results[0].formatted_address,
+                                    "postcode": row[2],
+                                    "name": row[0],
+                                    "companyType": row[5],
+                                    "description": row[columns.description],
+                                    "branchMain": (columns.branchMain) ? row[columns.branchMain] : null,
+                                    "branchSub1": (columns.branchSub1) ? row[columns.branchSub1] : null,
+                                    "branchSub2": (columns.branchSub2) ? row[columns.branchSub2] : null,
+                                    "SNICode1": (columns.SNICode1) ? row[columns.SNICode1].substr(0, 5) : null,
+                                    "SNICode2": (columns.SNICode2) ? row[columns.SNICode2].substr(0, 5) : null,
+                                    "SNICode3": (columns.SNICode3) ? row[columns.SNICode3].substr(0, 5) : null,
+                                    "SNICode4": (columns.SNICode4) ? row[columns.SNICode4].substr(0, 5) : null,
+                                    "SNICode5": (columns.SNICode5) ? row[columns.SNICode5].substr(0, 5) : null,
+                                    "id": row[3],
+                                    "_id": row[3]};
                         Address.collection.insert(addr, {safe:true},
                             function(err, objects) {
                                 if (err) console.warn(err.message);
@@ -294,16 +460,22 @@ function waitAndGeocode(idx, rows, SNICodeIdx) {
                         );
                     }
                 });
-            }(idx, row, SNICodeIdx));
+            }(idx, row, columns));
         }
     });
     if (idx < rows.length - 1) {
         //wait beetween google geocoding API requests...
-        setTimeout(function(){waitAndGeocode(idx + 1, rows, SNICodeIdx);}, 250);
+        setTimeout(function(){waitAndGeocode(idx + 1, rows, columns);}, 250);
     }
 }
 
 server.listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));
     console.log(process.env.NODE_ENV, process.env.NODE_ENV !== 'production');
+    console.log(/branch\s+\(main\)/i.test("Branch (Main)"));
+    console.log(/branch\s+\(main\)/i.test("Branch (main)"));
+    console.log(/branch\s+\(sub\)/i.test("Branch (sub)"));
+    console.log(/branch\s+\(sub\)/i.test("Branch (Sub)"));
+    console.log(/sni\s+[A-z]+\s+\#*1/i.test("SNI code 1"));
+    console.log(/sni\s+[A-z]+\s+\#*1/i.test("SNI code #1"));
 });

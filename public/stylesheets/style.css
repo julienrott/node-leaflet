@@ -19,6 +19,11 @@ a {
     //height: 50px;
 }
 
+#band > div {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 #map {
     height: 85%;
 }
