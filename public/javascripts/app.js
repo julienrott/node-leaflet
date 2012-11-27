@@ -3,6 +3,7 @@ var markersLayer;
 var socket = io.connect();
 
 socket.on("connection", function(data) {
+    $('#loadingspan').show();
     socket.emit('getmarkers');
     socket.emit('getCompanyTypes');
     socket.emit('getSNICodes1');
@@ -34,6 +35,7 @@ socket.on("receivemarkers", function(data) {
         markersLayer.addLayer(ml);
     }
     map.addLayer(markersLayer);
+    $('#loadingspan').hide();
 });
 
 socket.on("receiveCompanyTypes", function(data) {
@@ -143,6 +145,7 @@ var uploader = new qq.FileUploader({
 });
 
 function getUnlinkedSNICodesMarkers() {
+    $('#loadingspan').show();
     socket.emit(
             'getmarkers', 
             {
@@ -158,6 +161,7 @@ function getUnlinkedSNICodesMarkers() {
 
 $(function() {
     $("#btn").click(function() {
+        $('#loadingspan').show();
         socket.emit('getmarkers');
         socket.emit('getCompanyTypes');
         socket.emit('getSNICodes1');
@@ -169,6 +173,7 @@ $(function() {
     });
     
     $("#companyTypesSelect").change(function() {
+        $('#loadingspan').show();
         $("#SNICodes1Select")[0].selectedIndex = 0;
         $('#SNICodes2Select').find('option').remove().end();
         $('#SNICodes3Select').find('option').remove().end();
@@ -199,6 +204,7 @@ $(function() {
     });
     
     $("#SNICodes1Select").change(function() {
+        $('#loadingspan').show();
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $("#companyTypesSelect")[0].selectedIndex = 0;
@@ -219,6 +225,7 @@ $(function() {
     });
     
     $("#SNICodes2Select").change(function() {
+        $('#loadingspan').show();
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $('#SNICodes3Select').find('option').remove().end();
@@ -240,6 +247,7 @@ $(function() {
     });
     
     $("#SNICodes3Select").change(function() {
+        $('#loadingspan').show();
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $('#SNICodes4Select').find('option').remove().end();
@@ -262,6 +270,7 @@ $(function() {
     });
     
     $("#SNICodes4Select").change(function() {
+        $('#loadingspan').show();
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $('#SNICodes5Select').find('option').remove().end();
@@ -285,6 +294,7 @@ $(function() {
     });
     
     $("#SNICodes5Select").change(function() {
+        $('#loadingspan').show();
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             if ($(this)[0].selectedIndex === 0) {

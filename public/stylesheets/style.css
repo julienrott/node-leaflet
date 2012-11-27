@@ -24,6 +24,10 @@ a {
     vertical-align: middle;
 }
 
+#loadingspan {
+    display: none;
+}
+
 #map {
     height: 85%;
 }
