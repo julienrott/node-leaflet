@@ -190,6 +190,7 @@ $(function() {
     $("#SNICodesLinkedCB").change(function() {
         var cb = $(this);
         if(cb.is(':checked')) {
+            $('#loadingspan').show();
             $("#companyTypesSelect")[0].selectedIndex = 0;
             $("#SNICodes1Select")[0].selectedIndex = 0;
             $('#SNICodes2Select').find('option').remove().end();
