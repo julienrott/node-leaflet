@@ -65,63 +65,95 @@ io.sockets.on('connection', function(socket) {
                 });
                 return;
             }
-            if (options.SNICode5) {
-                Address.find({SNICode1: options.SNICode1, 
-                              SNICode2: options.SNICode2, 
-                              SNICode3: options.SNICode3, 
-                              SNICode4: options.SNICode4, 
-                              SNICode5: options.SNICode5}, function(err, markers) {
+            
+            if (options.unlinkedSNICodes) {
+                var orOptions = new Array();
+                
+                if(options.SNICode1 && options.SNICode1 != null) {
+                    orOptions.push({SNICode1: options.SNICode1});
+                }
+                
+                if(options.SNICode2 && options.SNICode2 != null) {
+                    orOptions.push({SNICode2: options.SNICode2});
+                }
+                
+                if(options.SNICode3 && options.SNICode3 != null) {
+                    orOptions.push({SNICode3: options.SNICode3});
+                }
+                
+                if(options.SNICode4 && options.SNICode4 != null) {
+                    orOptions.push({SNICode4: options.SNICode4});
+                }
+                
+                if(options.SNICode5 && options.SNICode5 != null) {
+                    orOptions.push({SNICode5: options.SNICode5});
+                }
+                
+                Address.find({$or: orOptions}, function(err, markers) {
                     socket.emit('receivemarkers', {markers: markers});
                 });
+                
                 return;
             }
-            if (options.SNICode4) {
-                Address.find({SNICode1: options.SNICode1, 
-                              SNICode2: options.SNICode2, 
-                              SNICode3: options.SNICode3, 
-                              SNICode4: options.SNICode4}, function(err, markers) {
-                    socket.emit('receivemarkers', {markers: markers});
-                    Address.distinct('SNICode5', {SNICode1: options.SNICode1,
-                                                  SNICode2: options.SNICode2,
-                                                  SNICode3: options.SNICode3,
-                                                  SNICode4: options.SNICode4}, function(err, SNICodes5) {
-                        socket.emit('receiveSNICodes5', {SNICodes5: SNICodes5});
+            else {
+                if (options.SNICode5) {
+                    Address.find({SNICode1: options.SNICode1, 
+                                  SNICode2: options.SNICode2, 
+                                  SNICode3: options.SNICode3, 
+                                  SNICode4: options.SNICode4, 
+                                  SNICode5: options.SNICode5}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
                     });
-                });
-                return;
-            }
-            if (options.SNICode3) {
-                Address.find({SNICode1: options.SNICode1, 
-                              SNICode2: options.SNICode2, 
-                              SNICode3: options.SNICode3}, function(err, markers) {
-                    socket.emit('receivemarkers', {markers: markers});
-                    Address.distinct('SNICode4', {SNICode1: options.SNICode1,
-                                                  SNICode2: options.SNICode2,
-                                                  SNICode3: options.SNICode3}, function(err, SNICodes4) {
-                        socket.emit('receiveSNICodes4', {SNICodes4: SNICodes4});
+                    return;
+                }
+                if (options.SNICode4) {
+                    Address.find({SNICode1: options.SNICode1, 
+                                  SNICode2: options.SNICode2, 
+                                  SNICode3: options.SNICode3, 
+                                  SNICode4: options.SNICode4}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
+                        Address.distinct('SNICode5', {SNICode1: options.SNICode1,
+                                                      SNICode2: options.SNICode2,
+                                                      SNICode3: options.SNICode3,
+                                                      SNICode4: options.SNICode4}, function(err, SNICodes5) {
+                            socket.emit('receiveSNICodes5', {SNICodes5: SNICodes5});
+                        });
                     });
-                });
-                return;
-            }
-            if (options.SNICode2) {
-                Address.find({SNICode1: options.SNICode1, 
-                              SNICode2: options.SNICode2}, function(err, markers) {
-                    socket.emit('receivemarkers', {markers: markers});
-                    Address.distinct('SNICode3', {SNICode1: options.SNICode1,
-                                                  SNICode2: options.SNICode2}, function(err, SNICodes3) {
-                        socket.emit('receiveSNICodes3', {SNICodes3: SNICodes3});
+                    return;
+                }
+                if (options.SNICode3) {
+                    Address.find({SNICode1: options.SNICode1, 
+                                  SNICode2: options.SNICode2, 
+                                  SNICode3: options.SNICode3}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
+                        Address.distinct('SNICode4', {SNICode1: options.SNICode1,
+                                                      SNICode2: options.SNICode2,
+                                                      SNICode3: options.SNICode3}, function(err, SNICodes4) {
+                            socket.emit('receiveSNICodes4', {SNICodes4: SNICodes4});
+                        });
                     });
-                });
-                return;
-            }
-            if (options.SNICode1) {
-                Address.find({SNICode1: options.SNICode1}, function(err, markers) {
-                    socket.emit('receivemarkers', {markers: markers});
-                    Address.distinct('SNICode2', {SNICode1: options.SNICode1}, function(err, SNICodes2) {
-                        socket.emit('receiveSNICodes2', {SNICodes2: SNICodes2});
+                    return;
+                }
+                if (options.SNICode2) {
+                    Address.find({SNICode1: options.SNICode1, 
+                                  SNICode2: options.SNICode2}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
+                        Address.distinct('SNICode3', {SNICode1: options.SNICode1,
+                                                      SNICode2: options.SNICode2}, function(err, SNICodes3) {
+                            socket.emit('receiveSNICodes3', {SNICodes3: SNICodes3});
+                        });
                     });
-                });
-                return;
+                    return;
+                }
+                if (options.SNICode1) {
+                    Address.find({SNICode1: options.SNICode1}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
+                        Address.distinct('SNICode2', {SNICode1: options.SNICode1}, function(err, SNICodes2) {
+                            socket.emit('receiveSNICodes2', {SNICodes2: SNICodes2});
+                        });
+                    });
+                    return;
+                }
             }
         }
         else {
@@ -136,6 +168,25 @@ io.sockets.on('connection', function(socket) {
         Address.distinct('companyType', {}, function(err, companyTypes) {
             companyTypes.sort();
             socket.emit('receiveCompanyTypes', {companyTypes: companyTypes});
+        });
+    });
+    
+    socket.on('getUnlinkedSNICodes', function(data) {
+        Address.distinct('SNICode2', {}, function(err, SNICodes2) {
+            SNICodes2.sort();
+            Address.distinct('SNICode3', {}, function(err, SNICodes3) {
+                SNICodes3.sort();
+                Address.distinct('SNICode4', {}, function(err, SNICodes4) {
+                    SNICodes4.sort();
+                    Address.distinct('SNICode5', {}, function(err, SNICodes5) {
+                        SNICodes5.sort();
+                        socket.emit('receiveUnlinkedSNICodes', {SNICodes2: SNICodes2,
+                                                                SNICodes3: SNICodes3,
+                                                                SNICodes4: SNICodes4,
+                                                                SNICodes5: SNICodes5});
+                    });
+                });
+            });
         });
     });
     

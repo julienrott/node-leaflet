@@ -46,6 +46,13 @@ socket.on("receiveCompanyTypes", function(data) {
     }
 });
 
+socket.on('receiveUnlinkedSNICodes', function(data) {
+    emptyAndFillSNISelect(2, data.SNICodes2);
+    emptyAndFillSNISelect(3, data.SNICodes3);
+    emptyAndFillSNISelect(4, data.SNICodes4);
+    emptyAndFillSNISelect(5, data.SNICodes5);
+});
+
 socket.on("receiveSNICodes1", function(data) {
     $('#SNICodes1Select').find('option').remove().end();
     var SNICodes1Select = $('#SNICodes1Select')[0];
@@ -101,6 +108,17 @@ socket.on("receivePostcodes", function(data) {
     //L.geoJson(data).addTo(map);
 });
 
+function emptyAndFillSNISelect(idx, SNICodes) {
+    var selectID = '#SNICodes' + idx +'Select';
+    $(selectID).find('option').remove().end();
+    var SNICodesSelect = $(selectID)[0];
+    SNICodesSelect.add(new Option('SNI Code ' + idx, 0));
+    for (idx in SNICodes) {
+        var SNICode = SNICodes[idx];
+        SNICodesSelect.add(new Option(SNICode, SNICode));
+    }
+}
+
 var map = new L.Map('map', {
     center: new L.LatLng(57.6, 8.4),
     zoom: 5,
@@ -123,6 +141,20 @@ var uploader = new qq.FileUploader({
     // path to server-side upload script
     action: '/upload'
 });
+
+function getUnlinkedSNICodesMarkers() {
+    socket.emit(
+            'getmarkers', 
+            {
+                unlinkedSNICodes: true,
+                SNICode1: $("#SNICodes1Select")[0].selectedIndex > 0 ? $("#SNICodes1Select option:selected")[0].value : null,
+                SNICode2: $("#SNICodes2Select")[0].selectedIndex > 0 ? $("#SNICodes2Select option:selected")[0].value : null,
+                SNICode3: $("#SNICodes3Select")[0].selectedIndex > 0 ? $("#SNICodes3Select option:selected")[0].value : null,
+                SNICode4: $("#SNICodes4Select")[0].selectedIndex > 0 ? $("#SNICodes4Select option:selected")[0].value : null,
+                SNICode5: $("#SNICodes5Select")[0].selectedIndex > 0 ? $("#SNICodes5Select option:selected")[0].value : null
+            }
+    );
+}
 
 $(function() {
     $("#btn").click(function() {
@@ -150,83 +182,129 @@ $(function() {
         }
     });
     
-    $("#SNICodes1Select").change(function() {
-        $("#companyTypesSelect")[0].selectedIndex = 0;
-        $('#SNICodes2Select').find('option').remove().end();
-        $('#SNICodes3Select').find('option').remove().end();
-        $('#SNICodes4Select').find('option').remove().end();
-        $('#SNICodes5Select').find('option').remove().end();
-        if ($(this)[0].selectedIndex === 0) {
+    $("#SNICodesLinkedCB").change(function() {
+        var cb = $(this);
+        if(cb.is(':checked')) {
+            $("#companyTypesSelect")[0].selectedIndex = 0;
+            $("#SNICodes1Select")[0].selectedIndex = 0;
+            $('#SNICodes2Select').find('option').remove().end();
+            $('#SNICodes3Select').find('option').remove().end();
+            $('#SNICodes4Select').find('option').remove().end();
+            $('#SNICodes5Select').find('option').remove().end();
             socket.emit('getmarkers');
         }
         else {
-            socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value});
+            socket.emit('getUnlinkedSNICodes');
+        }
+    });
+    
+    $("#SNICodes1Select").change(function() {
+        var cb = $("#SNICodesLinkedCB");
+        if (cb.is(':checked')) {
+            $("#companyTypesSelect")[0].selectedIndex = 0;
+            $('#SNICodes2Select').find('option').remove().end();
+            $('#SNICodes3Select').find('option').remove().end();
+            $('#SNICodes4Select').find('option').remove().end();
+            $('#SNICodes5Select').find('option').remove().end();
+            if ($(this)[0].selectedIndex === 0) {
+                socket.emit('getmarkers');
+            }
+            else {
+                socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value});
+            }
+        }
+        else {
+            getUnlinkedSNICodesMarkers();
         }
     });
     
     $("#SNICodes2Select").change(function() {
-        $('#SNICodes3Select').find('option').remove().end();
-        $('#SNICodes4Select').find('option').remove().end();
-        $('#SNICodes5Select').find('option').remove().end();
-        if ($(this)[0].selectedIndex === 0) {
-            socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value});
+        var cb = $("#SNICodesLinkedCB");
+        if (cb.is(':checked')) {
+            $('#SNICodes3Select').find('option').remove().end();
+            $('#SNICodes4Select').find('option').remove().end();
+            $('#SNICodes5Select').find('option').remove().end();
+            if ($(this)[0].selectedIndex === 0) {
+                socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value});
+            }
+            else {
+                socket.emit('getmarkers', 
+                    {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                    SNICode2: $("#SNICodes2Select option:selected")[0].value
+                });
+            }
         }
         else {
-            socket.emit('getmarkers', 
-                {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                SNICode2: $("#SNICodes2Select option:selected")[0].value
-            });
+            getUnlinkedSNICodesMarkers();
         }
     });
     
     $("#SNICodes3Select").change(function() {
-        $('#SNICodes4Select').find('option').remove().end();
-        $('#SNICodes5Select').find('option').remove().end();
-        if ($(this)[0].selectedIndex === 0) {
-            socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                                        SNICode2: $("#SNICodes2Select option:selected")[0].value});
+        var cb = $("#SNICodesLinkedCB");
+        if (cb.is(':checked')) {
+            $('#SNICodes4Select').find('option').remove().end();
+            $('#SNICodes5Select').find('option').remove().end();
+            if ($(this)[0].selectedIndex === 0) {
+                socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                                            SNICode2: $("#SNICodes2Select option:selected")[0].value});
+            }
+            else {
+                socket.emit('getmarkers', 
+                    {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                    SNICode2: $("#SNICodes2Select option:selected")[0].value,
+                    SNICode3: $("#SNICodes3Select option:selected")[0].value
+                });
+            }
         }
         else {
-            socket.emit('getmarkers', 
-                {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                SNICode2: $("#SNICodes2Select option:selected")[0].value,
-                SNICode3: $("#SNICodes3Select option:selected")[0].value
-            });
+            getUnlinkedSNICodesMarkers();
         }
     });
     
     $("#SNICodes4Select").change(function() {
-        $('#SNICodes5Select').find('option').remove().end();
-        if ($(this)[0].selectedIndex === 0) {
-            socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                                        SNICode2: $("#SNICodes2Select option:selected")[0].value,
-                                        SNICode3: $("#SNICodes3Select option:selected")[0].value});
+        var cb = $("#SNICodesLinkedCB");
+        if (cb.is(':checked')) {
+            $('#SNICodes5Select').find('option').remove().end();
+            if ($(this)[0].selectedIndex === 0) {
+                socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                                            SNICode2: $("#SNICodes2Select option:selected")[0].value,
+                                            SNICode3: $("#SNICodes3Select option:selected")[0].value});
+            }
+            else {
+                socket.emit('getmarkers', 
+                    {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                    SNICode2: $("#SNICodes2Select option:selected")[0].value,
+                    SNICode3: $("#SNICodes3Select option:selected")[0].value,
+                    SNICode4: $("#SNICodes4Select option:selected")[0].value
+                });
+            }
         }
         else {
-            socket.emit('getmarkers', 
-                {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                SNICode2: $("#SNICodes2Select option:selected")[0].value,
-                SNICode3: $("#SNICodes3Select option:selected")[0].value,
-                SNICode4: $("#SNICodes4Select option:selected")[0].value
-            });
+            getUnlinkedSNICodesMarkers();
         }
     });
     
     $("#SNICodes5Select").change(function() {
-        if ($(this)[0].selectedIndex === 0) {
-            socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                                        SNICode2: $("#SNICodes2Select option:selected")[0].value,
-                                        SNICode3: $("#SNICodes3Select option:selected")[0].value,
-                                        SNICode4: $("#SNICodes4Select option:selected")[0].value});
+        var cb = $("#SNICodesLinkedCB");
+        if (cb.is(':checked')) {
+            if ($(this)[0].selectedIndex === 0) {
+                socket.emit('getmarkers', {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                                            SNICode2: $("#SNICodes2Select option:selected")[0].value,
+                                            SNICode3: $("#SNICodes3Select option:selected")[0].value,
+                                            SNICode4: $("#SNICodes4Select option:selected")[0].value});
+            }
+            else {
+                socket.emit('getmarkers', 
+                    {SNICode1: $("#SNICodes1Select option:selected")[0].value,
+                    SNICode2: $("#SNICodes2Select option:selected")[0].value,
+                    SNICode3: $("#SNICodes3Select option:selected")[0].value,
+                    SNICode4: $("#SNICodes4Select option:selected")[0].value,
+                    SNICode5: $("#SNICodes5Select option:selected")[0].value
+                });
+            }
         }
         else {
-            socket.emit('getmarkers', 
-                {SNICode1: $("#SNICodes1Select option:selected")[0].value,
-                SNICode2: $("#SNICodes2Select option:selected")[0].value,
-                SNICode3: $("#SNICodes3Select option:selected")[0].value,
-                SNICode4: $("#SNICodes4Select option:selected")[0].value,
-                SNICode5: $("#SNICodes5Select option:selected")[0].value
-            });
+            getUnlinkedSNICodesMarkers();
         }
     });
 });
