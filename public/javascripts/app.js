@@ -165,6 +165,7 @@ $(function() {
         $('#loadingspan').show();
         socket.emit('getmarkers');
         socket.emit('getCompanyTypes');
+        socket.emit('getBranches');
         socket.emit('getSNICodes1');
         $('#SNICodes2Select').find('option').remove().end();
         $('#SNICodes3Select').find('option').remove().end();
