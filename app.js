@@ -66,7 +66,28 @@ io.sockets.on('connection', function(socket) {
                 return;
             }
             
-            if (options.unlinkedSNICodes) {
+            if (options.branches) {
+                var orOptions = new Array();
+                
+                if(options.branchMain && options.branchMain != null) {
+                    orOptions.push({branchMain: options.branchMain});
+                }
+                
+                if(options.branchSub1 && options.branchSub1 != null) {
+                    orOptions.push({branchSub1: options.branchSub1});
+                }
+                
+                if(options.branchSub2 && options.branchSub2 != null) {
+                    orOptions.push({branchSub2: options.branchSub2});
+                }
+                
+                Address.find({$or: orOptions}, function(err, markers) {
+                    socket.emit('receivemarkers', {markers: markers});
+                });
+                
+                return;
+            }
+            else if (options.unlinkedSNICodes) {
                 var orOptions = new Array();
                 
                 if(options.SNICode1 && options.SNICode1 != null) {
@@ -168,6 +189,21 @@ io.sockets.on('connection', function(socket) {
         Address.distinct('companyType', {}, function(err, companyTypes) {
             companyTypes.sort();
             socket.emit('receiveCompanyTypes', {companyTypes: companyTypes});
+        });
+    });
+    
+    socket.on('getBranches', function(data) {
+        Address.distinct('branchMain', {}, function(err, branchMain) {
+            branchMain.sort();
+            Address.distinct('branchSub1', {}, function(err, branchSub1) {
+                branchSub1.sort();
+                Address.distinct('branchSub2', {}, function(err, branchSub2) {
+                    branchSub2.sort();
+                    socket.emit('receiveBranches', {branchMain: branchMain,
+                                                    branchSub1: branchSub1,
+                                                    branchSub2: branchSub2});
+                });
+            });
         });
     });
     

@@ -7,6 +7,13 @@ block content
             button#btn refresh markers
             span
                 select#companyTypesSelect
+                select#branchMainSelect
+                select#branchSub1Select
+                select#branchSub2Select
+            span#loadingspan
+                img(src="images/loading.gif")
+                | Loading markers
+            div
                 input(type="checkbox", id="SNICodesLinkedCB", checked=true)
                 label(for="SNICodesLinkedCB") SNI Linked
                 select#SNICodes1Select
@@ -14,7 +21,4 @@ block content
                 select#SNICodes3Select
                 select#SNICodes4Select
                 select#SNICodes5Select
-            span#loadingspan
-                img(src="images/loading.gif")
-                | Loading markers
     #map
