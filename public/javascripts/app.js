@@ -50,9 +50,9 @@ socket.on("receiveCompanyTypes", function(data) {
 });
 
 socket.on("receiveBranches", function(data) {
-    emptyAndFillBranchSelect('Main', data.branchMain);
-    emptyAndFillBranchSelect('Sub1', data.branchSub1);
-    emptyAndFillBranchSelect('Sub2', data.branchSub2);
+    if (data.branchMain) emptyAndFillBranchSelect('Main', data.branchMain);
+    if (data.branchSub1) emptyAndFillBranchSelect('Sub1', data.branchSub1);
+    if (data.branchSub2) emptyAndFillBranchSelect('Sub2', data.branchSub2);
 });
 
 socket.on('receiveUnlinkedSNICodes', function(data) {
@@ -94,7 +94,7 @@ function emptyAndFillSNISelect(idx, SNICodes) {
     SNICodesSelect.add(new Option('SNI Code ' + idx, 0));
     for (idx in SNICodes) {
         var SNICode = SNICodes[idx];
-        SNICodesSelect.add(new Option(SNICode, SNICode));
+        if (SNICode) SNICodesSelect.add(new Option(SNICode, SNICode));
     }
 }
 
@@ -105,7 +105,7 @@ function emptyAndFillBranchSelect(idx, branches) {
     select.add(new Option('Branch ' + idx, 0));
     for (idx in branches) {
         var branche = branches[idx];
-        select.add(new Option(branche, branche));
+        if (branche) select.add(new Option(branche, branche));
     }
 }
 
@@ -147,10 +147,12 @@ function getUnlinkedSNICodesMarkers() {
 }
 
 function getBranchesMarkers() {
+    var cb = $("#branchesLinkedCB");
     socket.emit(
             'getmarkers', 
             {
                 branches: true,
+                branchesLinked: cb.is(':checked'),
                 branchMain: $("#branchMainSelect")[0].selectedIndex > 0 ? $("#branchMainSelect option:selected")[0].value : null,
                 branchSub1: $("#branchSub1Select")[0].selectedIndex > 0 ? $("#branchSub1Select option:selected")[0].value : null,
                 branchSub2: $("#branchSub2Select")[0].selectedIndex > 0 ? $("#branchSub2Select option:selected")[0].value : null
@@ -190,6 +192,28 @@ $(function() {
         }
     });
     
+    $("#branchesLinkedCB").change(function() {
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        $("#SNICodesLinkedCB")[0].checked = true;
+        $("#SNICodes1Select")[0].selectedIndex = 0;
+        $('#SNICodes2Select').find('option').remove().end();
+        $('#SNICodes3Select').find('option').remove().end();
+        $('#SNICodes4Select').find('option').remove().end();
+        $('#SNICodes5Select').find('option').remove().end();
+        $("#branchMainSelect")[0].selectedIndex = 0;
+        $("#branchSub1Select").find('option').remove().end();
+        $("#branchSub2Select").find('option').remove().end();
+        
+        var cb = $(this);
+        if(cb.is(':checked')) {
+            $('#loadingspan').show();
+            socket.emit('getmarkers');
+        }
+        else {
+            socket.emit('getBranches');
+        }
+    });
+    
     $("#branchMainSelect").change(function() {
         $('#loadingspan').show();
         $("#companyTypesSelect")[0].selectedIndex = 0;
@@ -199,6 +223,12 @@ $(function() {
         $('#SNICodes3Select').find('option').remove().end();
         $('#SNICodes4Select').find('option').remove().end();
         $('#SNICodes5Select').find('option').remove().end();
+        
+        var cb = $("#branchesLinkedCB");
+        if (cb.is(':checked')) {
+            $('#branchSub1Select').find('option').remove().end();
+            $('#branchSub2Select').find('option').remove().end();
+        }
         
         getBranchesMarkers();
     });
@@ -212,6 +242,11 @@ $(function() {
         $('#SNICodes3Select').find('option').remove().end();
         $('#SNICodes4Select').find('option').remove().end();
         $('#SNICodes5Select').find('option').remove().end();
+        
+        var cb = $("#branchesLinkedCB");
+        if (cb.is(':checked')) {
+            $('#branchSub2Select').find('option').remove().end();
+        }
         
         getBranchesMarkers();
     });

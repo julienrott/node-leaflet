@@ -66,24 +66,61 @@ io.sockets.on('connection', function(socket) {
                 return;
             }
             
-            if (options.branches) {
-                var orOptions = new Array();
-                
-                if(options.branchMain && options.branchMain != null) {
-                    orOptions.push({branchMain: options.branchMain});
+            if (options.branches === true) {
+                if (options.branchesLinked === true) {
+                    if (options.branchSub2) {
+                        Address.find({branchMain: options.branchMain, 
+                                      branchSub1: options.branchSub1, 
+                                      branchSub2: options.branchSub2}, function(err, markers) {
+                            socket.emit('receivemarkers', {markers: markers});
+                        });
+                        return;
+                    }
+                    if (options.branchSub1) {
+                        Address.find({branchMain: options.branchMain, 
+                                      branchSub1: options.branchSub1}, function(err, markers) {
+                            socket.emit('receivemarkers', {markers: markers});
+                        });
+                        Address.distinct('branchSub2', {branchMain: options.branchMain,
+                                                      branchSub1: options.branchSub1}, function(err, branchSub2) {
+                            socket.emit('receiveBranches', {branchSub2: branchSub2});
+                        });
+                        return;
+                    }
+                    if (options.branchMain) {
+                        Address.find({branchMain: options.branchMain}, function(err, markers) {
+                            socket.emit('receivemarkers', {markers: markers});
+                        });
+                        Address.distinct('branchSub1', {branchMain: options.branchMain}, function(err, branchSub1) {
+                            socket.emit('receiveBranches', {branchSub1: branchSub1});
+                        });
+                        return;
+                    }
+                    
+                    Address.find({}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
+                    });
+                    return;
                 }
-                
-                if(options.branchSub1 && options.branchSub1 != null) {
-                    orOptions.push({branchSub1: options.branchSub1});
+                else {
+                    var orOptions = new Array();
+                    
+                    if(options.branchMain && options.branchMain != null) {
+                        orOptions.push({branchMain: options.branchMain});
+                    }
+                    
+                    if(options.branchSub1 && options.branchSub1 != null) {
+                        orOptions.push({branchSub1: options.branchSub1});
+                    }
+                    
+                    if(options.branchSub2 && options.branchSub2 != null) {
+                        orOptions.push({branchSub2: options.branchSub2});
+                    }
+                    
+                    Address.find({$or: orOptions}, function(err, markers) {
+                        socket.emit('receivemarkers', {markers: markers});
+                    });
                 }
-                
-                if(options.branchSub2 && options.branchSub2 != null) {
-                    orOptions.push({branchSub2: options.branchSub2});
-                }
-                
-                Address.find({$or: orOptions}, function(err, markers) {
-                    socket.emit('receivemarkers', {markers: markers});
-                });
                 
                 return;
             }
@@ -524,18 +561,42 @@ function waitAndGeocode(idx, rows, columns) {
                         var addr = {"lat": data.results[0].geometry.location.lat, 
                                     "lng": data.results[0].geometry.location.lng,
                                     "address": data.results[0].formatted_address,
-                                    "postcode": row[2],
-                                    "name": row[0],
-                                    "companyType": row[5],
+                                    "postcode": row[2].trim(),
+                                    "name": row[0].trim(),
+                                    "companyType": row[5].trim(),
                                     "description": row[columns.description],
-                                    "branchMain": (columns.branchMain) ? row[columns.branchMain] : null,
-                                    "branchSub1": (columns.branchSub1) ? row[columns.branchSub1] : null,
-                                    "branchSub2": (columns.branchSub2) ? row[columns.branchSub2] : null,
-                                    "SNICode1": (columns.SNICode1) ? row[columns.SNICode1].substr(0, 5) : null,
-                                    "SNICode2": (columns.SNICode2) ? row[columns.SNICode2].substr(0, 5) : null,
-                                    "SNICode3": (columns.SNICode3) ? row[columns.SNICode3].substr(0, 5) : null,
-                                    "SNICode4": (columns.SNICode4) ? row[columns.SNICode4].substr(0, 5) : null,
-                                    "SNICode5": (columns.SNICode5) ? row[columns.SNICode5].substr(0, 5) : null,
+                                    "branchMain": (columns.branchMain && 
+                                                    row[columns.branchMain].trim() !== '' &&
+                                                    row[columns.branchMain].trim() !== 'null') ?
+                                                        row[columns.branchMain].trim() : null,
+                                    "branchSub1": (columns.branchSub1 && 
+                                                    row[columns.branchSub1].trim() !== '' &&
+                                                    row[columns.branchSub1].trim() !== 'null') ?
+                                                        row[columns.branchSub1].trim() : null,
+                                    "branchSub2": (columns.branchSub2 && 
+                                                    row[columns.branchSub2].trim() !== '' &&
+                                                    row[columns.branchSub2].trim() !== 'null') ?
+                                                        row[columns.branchSub2].trim() : null,
+                                    "SNICode1": (columns.SNICode1 && 
+                                                    row[columns.SNICode1].trim() !== '' &&
+                                                    row[columns.SNICode1].trim() !== 'null') ?
+                                                        row[columns.SNICode1].substr(0, 5).trim() : null,
+                                    "SNICode2": (columns.SNICode2 && 
+                                                    row[columns.SNICode2].trim() !== '' &&
+                                                    row[columns.SNICode2].trim() !== 'null') ?
+                                                        row[columns.SNICode2].substr(0, 5).trim() : null,
+                                    "SNICode3": (columns.SNICode3 && 
+                                                    row[columns.SNICode3].trim() !== '' &&
+                                                    row[columns.SNICode3].trim() !== 'null') ?
+                                                        row[columns.SNICode3].substr(0, 5).trim() : null,
+                                    "SNICode4": (columns.SNICode4 && 
+                                                    row[columns.SNICode4].trim() !== '' &&
+                                                    row[columns.SNICode4].trim() !== 'null') ?
+                                                        row[columns.SNICode4].substr(0, 5).trim() : null,
+                                    "SNICode5": (columns.SNICode5 && 
+                                                    row[columns.SNICode5].trim() !== '' &&
+                                                    row[columns.SNICode5].trim() !== 'null') ?
+                                                        row[columns.SNICode5].substr(0, 5).trim() : null,
                                     "id": row[3],
                                     "_id": row[3]};
                         Address.collection.insert(addr, {safe:true},
