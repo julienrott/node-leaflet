@@ -248,9 +248,12 @@ $(function() {
     
     $("#SNICodes1Select").change(function() {
         $('#loadingspan').show();
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        $("#branchMainSelect")[0].selectedIndex = 0;
+        $("#branchSub1Select")[0].selectedIndex = 0;
+        $("#branchSub2Select")[0].selectedIndex = 0;
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
-            $("#companyTypesSelect")[0].selectedIndex = 0;
             $('#SNICodes2Select').find('option').remove().end();
             $('#SNICodes3Select').find('option').remove().end();
             $('#SNICodes4Select').find('option').remove().end();
@@ -269,6 +272,10 @@ $(function() {
     
     $("#SNICodes2Select").change(function() {
         $('#loadingspan').show();
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        $("#branchMainSelect")[0].selectedIndex = 0;
+        $("#branchSub1Select")[0].selectedIndex = 0;
+        $("#branchSub2Select")[0].selectedIndex = 0;
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $('#SNICodes3Select').find('option').remove().end();
@@ -291,6 +298,10 @@ $(function() {
     
     $("#SNICodes3Select").change(function() {
         $('#loadingspan').show();
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        $("#branchMainSelect")[0].selectedIndex = 0;
+        $("#branchSub1Select")[0].selectedIndex = 0;
+        $("#branchSub2Select")[0].selectedIndex = 0;
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $('#SNICodes4Select').find('option').remove().end();
@@ -314,6 +325,10 @@ $(function() {
     
     $("#SNICodes4Select").change(function() {
         $('#loadingspan').show();
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        $("#branchMainSelect")[0].selectedIndex = 0;
+        $("#branchSub1Select")[0].selectedIndex = 0;
+        $("#branchSub2Select")[0].selectedIndex = 0;
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             $('#SNICodes5Select').find('option').remove().end();
@@ -338,6 +353,10 @@ $(function() {
     
     $("#SNICodes5Select").change(function() {
         $('#loadingspan').show();
+        $("#companyTypesSelect")[0].selectedIndex = 0;
+        $("#branchMainSelect")[0].selectedIndex = 0;
+        $("#branchSub1Select")[0].selectedIndex = 0;
+        $("#branchSub2Select")[0].selectedIndex = 0;
         var cb = $("#SNICodesLinkedCB");
         if (cb.is(':checked')) {
             if ($(this)[0].selectedIndex === 0) {
